@@ -235,24 +235,24 @@ class OktaAuthenticator(GenericFormsBasedAuthenticator):
                              'password': password})
         )
         parsed = json.loads(response.text)
-        print(parsed)
-        if parsed['status'] == u'MFA_REQUIRED':
-            token = parsed['stateToken']
-            print(token)
-            v_id = parsed['_embedded']['factors'][0]['id']
-            print(v_id)
-            _VERIFY_URL = auth_url + '/factors/' + v_id + '/verify'
-            vcontent = {}
-            vcontent['stateToken'] = token
-            vcontent['passCode'] = self._password_prompter("MFA Token: ")
-            v = self._requests_session.post(
-                _VERIFY_URL,
-                headers={'Content-Type': 'application/json',
-                     'Accept': 'application/json'},
-                data=json.dumps(vcontent)
-            ) 
-            session_token = json.loads(v.text)['sessionToken'] 
-        else:
+        try: 
+            if parsed['status'] == u'MFA_REQUIRED':
+                token = parsed['stateToken']
+                v_id = parsed['_embedded']['factors'][0]['id']
+                _VERIFY_URL = auth_url + '/factors/' + v_id + '/verify'
+                vcontent = {}
+                vcontent['stateToken'] = token
+                vcontent['passCode'] = self._password_prompter("MFA Token: ")
+                v = self._requests_session.post(
+                    _VERIFY_URL,
+                    headers={'Content-Type': 'application/json',
+                        'Accept': 'application/json'},
+                    data=json.dumps(vcontent)
+                ) 
+                session_token = json.loads(v.text)['sessionToken'] 
+            else:
+                session_token = parsed['sessionToken']
+        except KeyError:
             session_token = parsed['sessionToken']
         saml_url = endpoint + '?sessionToken=%s' % session_token
         response = self._requests_session.get(saml_url)

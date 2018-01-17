@@ -235,7 +235,25 @@ class OktaAuthenticator(GenericFormsBasedAuthenticator):
                              'password': password})
         )
         parsed = json.loads(response.text)
-        session_token = parsed['sessionToken']
+        print(parsed)
+        if parsed['status'] == u'MFA_REQUIRED':
+            token = parsed['stateToken']
+            print(token)
+            v_id = parsed['_embedded']['factors'][0]['id']
+            print(v_id)
+            _VERIFY_URL = auth_url + '/factors/' + v_id + '/verify'
+            vcontent = {}
+            vcontent['stateToken'] = token
+            vcontent['passCode'] = self._password_prompter("MFA Token: ")
+            v = self._requests_session.post(
+                _VERIFY_URL,
+                headers={'Content-Type': 'application/json',
+                     'Accept': 'application/json'},
+                data=json.dumps(vcontent)
+            ) 
+            session_token = json.loads(v.text)['sessionToken'] 
+        else:
+            session_token = parsed['sessionToken']
         saml_url = endpoint + '?sessionToken=%s' % session_token
         response = self._requests_session.get(saml_url)
         logger.info(
@@ -312,7 +330,8 @@ class SAMLCredentialFetcher(CachedCredentialFetcher):
 
     def __init__(self, client_creator, provider_name, saml_config,
                  role_selector=_role_selector,
-                 password_prompter=getpass.getpass, cache=None,
+                 password_prompter=getpass.getpass,
+                 cache=None,
                  expiry_window_seconds=60 * 15):
         """Credential fetcher for SAML."""
         self._client_creator = client_creator

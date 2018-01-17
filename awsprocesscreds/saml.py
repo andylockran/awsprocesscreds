@@ -235,7 +235,7 @@ class OktaAuthenticator(GenericFormsBasedAuthenticator):
                              'password': password})
         )
         parsed = json.loads(response.text)
-        try: 
+        try:
             if parsed['status'] == u'MFA_REQUIRED':
                 token = parsed['stateToken']
                 v_id = parsed['_embedded']['factors'][0]['id']
@@ -245,11 +245,13 @@ class OktaAuthenticator(GenericFormsBasedAuthenticator):
                 vcontent['passCode'] = self._password_prompter("MFA Token: ")
                 v = self._requests_session.post(
                     _VERIFY_URL,
-                    headers={'Content-Type': 'application/json',
-                        'Accept': 'application/json'},
+                    headers={
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
                     data=json.dumps(vcontent)
-                ) 
-                session_token = json.loads(v.text)['sessionToken'] 
+                )
+                session_token = json.loads(v.text)['sessionToken']
             else:
                 session_token = parsed['sessionToken']
         except KeyError:

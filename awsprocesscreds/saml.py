@@ -259,12 +259,7 @@ class OktaAuthenticator(GenericFormsBasedAuthenticator):
         response = self._requests_session.get(saml_url)
         logger.info(
             'Received HTTP response of status code: %s', response.status_code)
-        r = self._extract_saml_assertion_from_response(response.text)
-        logger.info(
-            'Received the following SAML assertion: \n%s', r,
-            extra={'is_saml_assertion': True}
-        )
-        return r
+        return self._extract_saml_assertion_from_response(response.text)
 
     def is_suitable(self, config):
         return (config.get('saml_authentication_type') == 'form' and
